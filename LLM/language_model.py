@@ -13,6 +13,10 @@ from rich.console import Console
 import logging
 from nltk import sent_tokenize
 
+#RAG
+from RAG.retrieval import RAGSystem
+
+
 logger = logging.getLogger(__name__)
 
 console = Console()
@@ -126,6 +130,14 @@ class LanguageModelHandler(BaseHandler):
                 prompt = f"Please reply to my message in {WHISPER_LANGUAGE_TO_LLM_LANGUAGE[language_code]}. " + prompt
 
         self.chat.append({"role": self.user_role, "content": prompt})
+
+        # RAG retrieval
+        rag = RAGSystem()
+        documents = rag.retrieve(prompt)
+        if documents:
+            context = "\n\n".join([doc.page_content for doc in documents])
+            self.chat.append({"role": "system", "content": context})
+
         thread = Thread(
             target=self.pipe, args=(self.chat.to_list(),), kwargs=self.gen_kwargs
         )
