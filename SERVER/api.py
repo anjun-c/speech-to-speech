@@ -72,18 +72,70 @@ def create_pipeline_with_deepseek_config():
             '--open_api_model_name', 'deepseek-chat',
             '--open_api_api_key', os.getenv('DEEPSEEK_API_KEY'),
             '--open_api_base_url', os.getenv('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
-            '--open_api_stream', 'false',  # Disable streaming for API simplicity
+            '--open_api_stream', 'false',
             '--mode', 'local',
             '--stt', 'faster-whisper',
             '--tts', 'parler',
             '--log_level', 'info'
         ]
         
-        # Parse arguments and build pipeline
-        args = parse_arguments()
-        prepare_all_args(*args)
+        # Parse arguments - this returns a tuple of all argument classes
+        args_tuple = parse_arguments()
+        
+        # Unpack the arguments tuple to match prepare_all_args signature
+        (
+            module_kwargs,
+            socket_receiver_kwargs,
+            socket_sender_kwargs,
+            vad_handler_kwargs,
+            whisper_stt_handler_kwargs,
+            paraformer_stt_handler_kwargs,
+            faster_whisper_stt_handler_kwargs,
+            language_model_handler_kwargs,
+            open_api_language_model_handler_kwargs,
+            mlx_language_model_handler_kwargs,
+            parler_tts_handler_kwargs,
+            melo_tts_handler_kwargs,
+            chat_tts_handler_kwargs,
+            facebook_mms_tts_handler_kwargs,
+        ) = args_tuple
+        
+        # Call prepare_all_args with the correct number of arguments
+        prepare_all_args(
+            module_kwargs,
+            whisper_stt_handler_kwargs,
+            paraformer_stt_handler_kwargs,
+            faster_whisper_stt_handler_kwargs,
+            language_model_handler_kwargs,
+            open_api_language_model_handler_kwargs,
+            mlx_language_model_handler_kwargs,
+            parler_tts_handler_kwargs,
+            melo_tts_handler_kwargs,
+            chat_tts_handler_kwargs,
+            facebook_mms_tts_handler_kwargs,
+        )
+        
+        # Initialize queues and events
         queues_and_events = initialize_queues_and_events()
-        pipeline = build_pipeline(*args, queues_and_events)
+        
+        # Build pipeline with all the arguments
+        pipeline = build_pipeline(
+            module_kwargs,
+            socket_receiver_kwargs,
+            socket_sender_kwargs,
+            vad_handler_kwargs,
+            whisper_stt_handler_kwargs,
+            faster_whisper_stt_handler_kwargs,
+            paraformer_stt_handler_kwargs,
+            language_model_handler_kwargs,
+            open_api_language_model_handler_kwargs,
+            mlx_language_model_handler_kwargs,
+            parler_tts_handler_kwargs,
+            melo_tts_handler_kwargs,
+            chat_tts_handler_kwargs,
+            facebook_mms_tts_handler_kwargs,
+            queues_and_events,
+        )
         
         # Restore original argv
         sys.argv = original_argv
@@ -96,8 +148,11 @@ def create_pipeline_with_deepseek_config():
         
     except Exception as e:
         print(f"Failed to initialize pipeline: {e}")
+        import traceback
+        traceback.print_exc()
         pipeline_ready = False
         raise
+
 
 # Initialize pipeline on startup
 @app.on_event("startup")
